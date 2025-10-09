@@ -20,7 +20,7 @@ export async function summariseVisaGuidance(
   sourceUrl: string,
   lastUpdated: string | null
 ): Promise<VisaSummary> {
-  const prompt = `You are an expert at analyzing UK visa guidance from GOV.UK. Your task is to create a clear, structured summary of the following visa guidance.
+  const prompt = `You are an expert at analysing UK visa guidance from GOV.UK. Your task is to create a clear, structured summary of the following visa guidance.
 
 IMPORTANT INSTRUCTIONS:
 - Extract information ONLY from the provided text - do not add information from your training data
@@ -88,7 +88,9 @@ Format your response as valid JSON with this exact structure. IMPORTANT: Escape 
     let jsonText = responseText;
 
     // Remove markdown code blocks if present
-    const codeBlockMatch = responseText.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+    const codeBlockMatch = responseText.match(
+      /```(?:json)?\s*([\s\S]*?)\s*```/
+    );
     if (codeBlockMatch) {
       jsonText = codeBlockMatch[1];
     } else {
@@ -98,19 +100,23 @@ Format your response as valid JSON with this exact structure. IMPORTANT: Escape 
       }
     }
 
-    if (!jsonText || (!jsonText.trim().startsWith('{') && !jsonText.includes('{'))) {
+    if (
+      !jsonText ||
+      (!jsonText.trim().startsWith("{") && !jsonText.includes("{"))
+    ) {
       throw new Error("Failed to parse LLM response as JSON");
     }
 
     const parsedSummary = JSON.parse(jsonText);
 
     // Process checklist items with unique IDs and completed state
-    const checklist = parsedSummary.checklist?.map((item: any, index: number) => ({
-      id: `checklist-${index}`,
-      category: item.category,
-      task: item.task,
-      completed: false,
-    })) || [];
+    const checklist =
+      parsedSummary.checklist?.map((item: any, index: number) => ({
+        id: `checklist-${index}`,
+        category: item.category,
+        task: item.task,
+        completed: false,
+      })) || [];
 
     return {
       title: visaName,
