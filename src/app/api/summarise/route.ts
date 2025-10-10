@@ -46,7 +46,8 @@ export async function POST(request: NextRequest) {
       textContent,
       visaRoute.name,
       sourceUrl,
-      lastUpdated
+      lastUpdated,
+      visaRoute.path // Pass the base path for section-specific URLs
     );
 
     return NextResponse.json<SummariseResponse>({
