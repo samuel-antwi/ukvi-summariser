@@ -51,3 +51,38 @@ export interface SummariseResponse {
   data?: VisaSummary;
   error?: string;
 }
+
+// Eligibility Checker Types
+export interface EligibilityQuestion {
+  id: string;
+  question: string;
+  type: 'yes-no' | 'multiple-choice';
+  options?: string[]; // For multiple-choice questions
+  helpText?: string; // Optional explanation
+}
+
+export interface EligibilityAnswer {
+  questionId: string;
+  answer: string; // "yes", "no", or the selected option
+}
+
+export interface EligibilityAssessment {
+  eligible: boolean; // true = likely eligible, false = likely not eligible
+  confidence: 'high' | 'medium' | 'low';
+  summary: string; // Brief explanation of the assessment
+  reasons: string[]; // Bullet points explaining why
+  nextSteps: string[]; // What the user should do next
+  warnings?: string[]; // Important caveats or warnings
+  sourceUrl: string; // Link to official guidance
+}
+
+export interface EligibilityCheckRequest {
+  visaRouteId: VisaRouteId;
+  answers: EligibilityAnswer[];
+}
+
+export interface EligibilityCheckResponse {
+  success: boolean;
+  data?: EligibilityAssessment;
+  error?: string;
+}

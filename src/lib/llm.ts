@@ -1,5 +1,10 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { VisaSummary } from "@/types";
+import {
+  VisaSummary,
+  EligibilityAssessment,
+  EligibilityQuestion,
+  EligibilityAnswer,
+} from "@/types";
 import { SUMMARY_DISCLAIMER } from "./constants";
 
 const anthropic = new Anthropic({
@@ -196,5 +201,148 @@ CRITICAL JSON FORMATTING RULES:
       throw new Error(`LLM summarisation failed: ${error.message}`);
     }
     throw new Error("LLM summarisation failed: Unknown error");
+  }
+}
+
+/**
+ * Assesses eligibility for a visa based on user answers and official guidance
+ * @param content - The raw text content from GOV.UK
+ * @param visaName - The name of the visa route
+ * @param questions - The eligibility questions that were asked
+ * @param answers - The user's answers to those questions
+ * @param sourceUrl - The URL to the original GOV.UK page
+ * @returns An eligibility assessment
+ */
+export async function assessEligibility(
+  content: string,
+  visaName: string,
+  questions: EligibilityQuestion[],
+  answers: EligibilityAnswer[],
+  sourceUrl: string
+): Promise<EligibilityAssessment> {
+  // Build a readable Q&A format for the LLM
+  const questionsAndAnswers = questions
+    .map((q) => {
+      const answer = answers.find((a) => a.questionId === q.id);
+      return `Q: ${q.question}\nA: ${answer?.answer || 'Not answered'}`;
+    })
+    .join('\n\n');
+
+  const prompt = `You are an expert at analysing UK visa guidance from GOV.UK. Your task is to assess whether a user is likely eligible for a visa based on their answers to specific questions.
+
+IMPORTANT INSTRUCTIONS:
+- Base your assessment ONLY on the official GOV.UK content provided below
+- Be honest and accurate - if the answers suggest they may not be eligible, say so
+- Use British English spelling throughout
+- Consider all requirements mentioned in the guidance
+- If information is unclear or missing, reflect that in your confidence level
+
+Visa Type: ${visaName}
+
+Official GOV.UK Content:
+${content}
+
+User's Answers to Eligibility Questions:
+${questionsAndAnswers}
+
+Please assess the user's eligibility and provide a structured response as STRICTLY VALID JSON with this exact structure:
+{
+  "eligible": boolean (true if likely eligible based on answers, false if likely not eligible),
+  "confidence": "high" | "medium" | "low" (how confident you are in this assessment),
+  "summary": "string (2-3 sentence summary of the assessment)",
+  "reasons": [
+    "string (bullet point explaining a key factor in your assessment)"
+  ],
+  "nextSteps": [
+    "string (actionable step the user should take)"
+  ],
+  "warnings": [
+    "string (important caveat or warning, if applicable)"
+  ]
+}
+
+Guidelines for assessment:
+1. ELIGIBLE = true if the user's answers generally align with the requirements
+2. ELIGIBLE = false if they indicated clear disqualifying factors (e.g., intending to work on a visitor visa)
+3. CONFIDENCE = high only if requirements are clearly stated and answers clearly match
+4. CONFIDENCE = medium if some ambiguity exists or more evidence would be needed
+5. CONFIDENCE = low if significant information is missing or requirements are complex
+6. REASONS should explain specifically why you made your assessment (reference their answers)
+7. NEXT STEPS should be practical actions (e.g., "Gather your passport and documents", "Check if your job is on the eligible occupation list")
+8. WARNINGS should highlight important caveats (e.g., "This assessment is not official guidance", "Final decision is made by UK Visas and Immigration")
+
+CRITICAL JSON FORMATTING RULES:
+- Escape all double quotes inside strings with backslash: \\"
+- Escape all newlines as \\n
+- Ensure all strings are properly closed
+- End each array element with a comma except the last one`;
+
+  try {
+    const message = await anthropic.messages.create({
+      model: "claude-3-5-sonnet-20241022",
+      max_tokens: 4000,
+      messages: [
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+    });
+
+    const responseText =
+      message.content[0].type === "text" ? message.content[0].text : "";
+
+    // Extract JSON from response
+    let jsonText = responseText;
+
+    // Remove markdown code blocks if present
+    const codeBlockMatch = responseText.match(
+      /```(?:json)?\s*([\s\S]*?)\s*```/
+    );
+    if (codeBlockMatch) {
+      jsonText = codeBlockMatch[1];
+    } else {
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        jsonText = jsonMatch[0];
+      }
+    }
+
+    if (
+      !jsonText ||
+      (!jsonText.trim().startsWith("{") && !jsonText.includes("{"))
+    ) {
+      throw new Error("Failed to parse LLM response as JSON");
+    }
+
+    let parsedAssessment;
+    try {
+      parsedAssessment = JSON.parse(jsonText);
+    } catch (parseError) {
+      throw new Error(
+        `JSON parsing failed: ${parseError instanceof Error ? parseError.message : "Unknown error"}`
+      );
+    }
+
+    return {
+      eligible: parsedAssessment.eligible || false,
+      confidence: parsedAssessment.confidence || "low",
+      summary: parsedAssessment.summary || "Unable to assess eligibility",
+      reasons: parsedAssessment.reasons || [],
+      nextSteps: parsedAssessment.nextSteps || [
+        "Review the full guidance on GOV.UK",
+        "Consider consulting with an immigration adviser",
+      ],
+      warnings: parsedAssessment.warnings || [
+        "This is an automated assessment and is not official guidance",
+        "Final eligibility decisions are made by UK Visas and Immigration",
+      ],
+      sourceUrl,
+    };
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`LLM eligibility assessment failed: ${error.message}`);
+    }
+    throw new Error("LLM eligibility assessment failed: Unknown error");
   }
 }
