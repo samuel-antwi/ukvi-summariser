@@ -91,8 +91,6 @@ IMPORTANT: Keep each section concise (2-4 key points maximum). Only cite factual
 
 7. APPLICATION_STEPS: List 4-5 high-level steps. Cite steps that have specific requirements or timelines.
 
-8. CHECKLIST: Generate a concise pre-application checklist (5-8 actionable items) organised by category. These do not need citations.
-
 Format your response as STRICTLY VALID JSON with this exact structure:
 {
   "eligibility": "string (with [1], [2] citations)",
@@ -102,12 +100,6 @@ Format your response as STRICTLY VALID JSON with this exact structure:
   "requiredDocuments": "string (with citations)",
   "fees": "string (with citations)",
   "applicationSteps": "string (with citations)",
-  "checklist": [
-    {
-      "category": "eligibility" | "documents" | "financial" | "application",
-      "task": "string"
-    }
-  ],
   "citations": [
     {
       "id": "1",
@@ -173,20 +165,6 @@ CRITICAL JSON FORMATTING RULES:
       throw new Error(`JSON parsing failed: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`);
     }
 
-    // Process checklist items with unique IDs and completed state
-    const checklist =
-      parsedSummary.checklist?.map(
-        (
-          item: { category: string; task: string },
-          index: number
-        ) => ({
-          id: `checklist-${index}`,
-          category: item.category,
-          task: item.task,
-          completed: false,
-        })
-      ) || [];
-
     // Process citations
     const citations: Array<{ id: string; quote: string; section: string; sectionTitle?: string }> =
       parsedSummary.citations?.map(
@@ -197,7 +175,6 @@ CRITICAL JSON FORMATTING RULES:
           sectionTitle: citation.sectionTitle,
         })
       ) || [];
-
 
     return {
       title: visaName,
@@ -212,7 +189,6 @@ CRITICAL JSON FORMATTING RULES:
       fees: parsedSummary.fees,
       applicationSteps: parsedSummary.applicationSteps,
       disclaimer: SUMMARY_DISCLAIMER,
-      checklist,
       citations,
     };
   } catch (error) {

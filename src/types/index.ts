@@ -43,15 +43,7 @@ export interface VisaSummary {
   fees: string;
   applicationSteps: string;
   disclaimer: string;
-  checklist?: ChecklistItem[];
   citations?: Citation[];
-}
-
-export interface ChecklistItem {
-  id: string;
-  category: 'eligibility' | 'documents' | 'financial' | 'application';
-  task: string;
-  completed: boolean;
 }
 
 export interface SummariseResponse {

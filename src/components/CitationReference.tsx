@@ -58,9 +58,6 @@ export function CitationReference({ citation, basePath }: CitationReferenceProps
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded transition-colors"
-                onClick={() => {
-                  console.log('Opening verification URL:', verificationUrl);
-                }}
               >
                 <span>View on official GOV.UK page</span>
                 <svg

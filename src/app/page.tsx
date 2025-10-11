@@ -3,19 +3,15 @@
 import { useState } from 'react';
 import { VisaSelector } from '@/components/VisaSelector';
 import { SummaryDisplay } from '@/components/SummaryDisplay';
-import { ChecklistDisplay } from '@/components/ChecklistDisplay';
 import { LoadingState } from '@/components/LoadingState';
 import { ErrorDisplay } from '@/components/ErrorDisplay';
 import { VisaRouteId, VisaSummary } from '@/types';
-
-type ViewMode = 'summary' | 'checklist';
 
 export default function Home() {
   const [selectedVisa, setSelectedVisa] = useState<VisaRouteId | null>(null);
   const [summary, setSummary] = useState<VisaSummary | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('summary');
 
   const handleSummarise = async () => {
     if (!selectedVisa) return;
@@ -79,46 +75,10 @@ export default function Home() {
           </button>
         </div>
 
-        {/* View toggle */}
-        {summary && !loading && (
-          <div className="mb-6 flex gap-2 border-b border-foreground/10">
-            <button
-              onClick={() => setViewMode('summary')}
-              className={`px-4 py-2 font-medium transition-colors ${
-                viewMode === 'summary'
-                  ? 'border-b-2 border-foreground text-foreground'
-                  : 'text-foreground/60 hover:text-foreground'
-              }`}
-            >
-              Summary
-            </button>
-            <button
-              onClick={() => setViewMode('checklist')}
-              className={`px-4 py-2 font-medium transition-colors ${
-                viewMode === 'checklist'
-                  ? 'border-b-2 border-foreground text-foreground'
-                  : 'text-foreground/60 hover:text-foreground'
-              }`}
-            >
-              Checklist
-            </button>
-          </div>
-        )}
-
         {/* Display states */}
         {loading && <LoadingState />}
         {error && <ErrorDisplay message={error} onRetry={handleRetry} />}
-        {summary && !loading && viewMode === 'summary' && (
-          <SummaryDisplay summary={summary} />
-        )}
-        {summary && !loading && viewMode === 'checklist' && summary.checklist && (
-          <ChecklistDisplay
-            items={summary.checklist}
-            visaTitle={summary.title}
-            sourceUrl={summary.sourceUrl}
-            lastUpdated={summary.lastUpdated}
-          />
-        )}
+        {summary && !loading && <SummaryDisplay summary={summary} />}
       </main>
     </div>
   );
