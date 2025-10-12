@@ -172,16 +172,15 @@ export function EligibilityChecker({
         ))}
 
         {error && (
-          <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
-            <p className="text-red-700 dark:text-red-300 text-sm">{error}</p>
+          <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
 
         <button
           type="submit"
           disabled={!allQuestionsAnswered || loading}
-          className="w-full px-6 py-3 text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-          style={{ backgroundColor: '#1D71B8' }}
+          className="w-full px-6 py-3 bg-[#1D71B8] text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           {loading ? "Assessing Eligibility..." : "Check Eligibility"}
         </button>
@@ -211,8 +210,8 @@ function EligibilityResult({
       <div
         className={`p-6 rounded-lg border-2 ${
           assessment.eligible
-            ? "bg-white dark:bg-green-900/20 border-green-600"
-            : "bg-white dark:bg-orange-900/20 border-orange-600"
+            ? "bg-white border-green-600"
+            : "bg-white border-orange-600"
         }`}
       >
         <div className="flex items-start gap-4">
@@ -259,13 +258,13 @@ function EligibilityResult({
 
       {/* Warnings */}
       {assessment.warnings && assessment.warnings.length > 0 && (
-        <div className="p-4 bg-white dark:bg-amber-900/20 border-2 border-amber-500 dark:border-amber-700 rounded-lg">
-          <h3 className="text-lg font-bold mb-3 ">Important Notes</h3>
+        <div className="p-4 bg-white border-2 border-amber-500 rounded-lg">
+          <h3 className="text-lg font-bold mb-3">Important Notes</h3>
           <ul className="space-y-2">
             {assessment.warnings.map((warning, index) => (
               <li
                 key={index}
-                className="flex items-start gap-2 text-black  text-sm"
+                className="flex items-start gap-2 text-black text-sm"
               >
                 <span>⚠️</span>
                 <span>{warning}</span>
@@ -294,8 +293,8 @@ function EligibilityResult({
       </div>
 
       {/* Official Guidance Link */}
-      <div className="p-4 bg-white dark:bg-blue-900/20 border-2 border-blue-500 dark:border-blue-800 rounded-lg">
-        <p className="text-sm text-black mb-2 font-medium">
+      <div className="p-4 bg-white border-2 border-[#1D71B8] rounded-lg">
+        <p className="text-sm mb-2 font-medium">
           📋 This is an initial assessment only. Always verify full requirements
           on the official GOV.UK guidance:
         </p>
@@ -303,8 +302,7 @@ function EligibilityResult({
           href={assessment.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="hover:underline text-sm font-bold"
-          style={{ color: '#1D71B8' }}
+          className="hover:underline text-sm font-bold text-[#115293]"
         >
           View official guidance →
         </a>

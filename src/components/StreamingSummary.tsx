@@ -129,8 +129,7 @@ export function StreamingSummary({
             return (
               <sup
                 key={j}
-                className="font-medium mx-0.5"
-                style={{ color: '#1D71B8' }}
+                className="font-medium mx-0.5 text-[#1D71B8]"
               >
                 [{citationId}]
               </sup>
@@ -155,10 +154,22 @@ export function StreamingSummary({
     <div className="w-full">
       {/* Streaming text display - word by word like ChatGPT */}
       <div className="p-6 bg-background border border-foreground/10 rounded-lg">
-        <div className="text-foreground/90 leading-relaxed">
-          {formatStreamedText(streamedText)}
-          <span className="inline-block w-0.5 h-5 ml-0.5 bg-blue-500 animate-pulse" />
-        </div>
+        {streamedText ? (
+          <div className="text-foreground/90 leading-relaxed">
+            {formatStreamedText(streamedText)}
+            <span className="inline-block w-0.5 h-5 ml-0.5 bg-[#1D71B8] animate-pulse" />
+          </div>
+        ) : (
+          /* Loading skeleton while waiting for first chunk */
+          <div className="space-y-4 animate-pulse">
+            <div className="h-4 bg-foreground/10 rounded w-3/4"></div>
+            <div className="h-4 bg-foreground/10 rounded w-full"></div>
+            <div className="h-4 bg-foreground/10 rounded w-5/6"></div>
+            <div className="h-4 bg-foreground/10 rounded w-2/3 mt-6"></div>
+            <div className="h-4 bg-foreground/10 rounded w-full"></div>
+            <div className="h-4 bg-foreground/10 rounded w-4/5"></div>
+          </div>
+        )}
       </div>
     </div>
   );

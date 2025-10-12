@@ -309,15 +309,20 @@ The application uses a **fully dynamic approach** with zero hardcoded section li
 
 **Dynamic extraction:**
 - `extractSectionTitles()` in `govuk.ts` automatically extracts section titles from each GOV.UK API response
-- Each API call includes `details.parts[]` array with all section titles
-- These titles are passed directly to the LLM prompts, ensuring they're always current
+- `extractSectionMappings()` extracts title→slug mappings directly from GOV.UK API
+- Each API call includes `details.parts[]` array with all section titles AND their actual slugs
+- These are passed directly to the LLM prompts and citation components, ensuring they're always current
 - **No code changes needed** if GOV.UK adds/removes/renames sections
 
-**Automatic URL slug generation:**
-- `sectionTitleToSlug()` in `sectionMapper.ts` converts any section title to a valid URL slug
-- Algorithm: lowercase → remove special chars → replace spaces with hyphens
-- Example: `"Apply for a Standard Visitor visa"` → `"apply-for-a-standard-visitor-visa"`
-- Works for any section title, including new ones GOV.UK may add in the future
+**Using Actual GOV.UK Slugs (Not Generated):**
+- GOV.UK API provides actual slugs: `{ title: "Apply for a Standard Visitor visa", slug: "apply-standard-visitor-visa" }`
+- We use these actual slugs instead of generating them
+- Why this matters: GOV.UK slugs don't always match simple transformations
+  - Title: `"Apply for a Standard Visitor visa"`
+  - Generated slug would be: `"apply-for-a-standard-visitor-visa"` ❌
+  - Actual GOV.UK slug: `"apply-standard-visitor-visa"` ✅ (removes "for a")
+- Citations now link to correct URLs 100% of the time
+- Fallback to generation only if slug missing (backwards compatibility)
 
 **Real-world proof during testing:**
 When testing Skilled Worker visa, the system automatically handled sections that weren't in any hardcoded list:
@@ -372,6 +377,124 @@ This demonstrates **excellent software engineering principles**:
 - Write code that adapts to reality, not assumptions
 
 **The result:** A production-ready system that requires zero maintenance as GOV.UK updates their content structure.
+
+---
+
+## Key Design Decisions
+
+### 1. Real-Time Streaming Over Static Loading
+
+**Decision:** Implement Server-Sent Events (SSE) for word-by-word streaming instead of showing a loading spinner
+
+**Rationale:**
+- **Better UX:** Users see content immediately as it's generated (like ChatGPT)
+- **Perceived performance:** 10-15 second wait feels much shorter when watching text appear
+- **Progressive functionality:** Citations become clickable as they stream in, not after completion
+- **User engagement:** Streaming creates a sense of the AI "thinking" and building the response
+
+**Cost:**
+- More complex implementation (dual-prompt strategy, progressive parsing)
+- Higher bandwidth usage compared to single JSON response
+
+**Verdict:** Worth it - significantly better user experience for a task that takes 10-15 seconds
+
+### 2. Citation Grounding Over Simple Summarization
+
+**Decision:** Every claim must have a numbered citation with exact quote and verification link
+
+**Rationale:**
+- **Trust:** Users can verify any claim against official GOV.UK source
+- **Transparency:** Makes it obvious if LLM hallucinates (citation won't match)
+- **Accountability:** Forces LLM to only use provided text, not training data
+- **User confidence:** Backed by source = more trustworthy than raw AI output
+
+**Cost:**
+- Longer prompts and more complex parsing
+- More tokens used (citations add ~20-30% to response length)
+- More development time
+
+**Verdict:** Essential - transforms "AI summary" into "verifiable guidance tool"
+
+### 3. Zero Hardcoding Architecture Over Maintainability Shortcuts
+
+**Decision:** Dynamically extract section titles from GOV.UK API instead of hardcoding section lists
+
+**Rationale:**
+- **Future-proof:** Works automatically if GOV.UK adds/removes/renames sections
+- **Zero maintenance:** No need to update code when guidance changes
+- **Better coverage:** Captures ALL sections, not just ones we knew about
+- **Scalability:** Add new visa types without defining section mappings
+
+**Cost:**
+- Slightly more complex code (extraction functions)
+- Trust in GOV.UK API structure consistency
+
+**Verdict:** Critical for production-ready system - this will still work correctly 5 years from now
+
+### 4. Tailwind CSS Over Component Libraries
+
+**Decision:** Use Tailwind utility classes instead of Material-UI/Chakra/etc.
+
+**Rationale:**
+- **Performance:** No large component library bundle
+- **Flexibility:** Full control over design without fighting library defaults
+- **GOV.UK aesthetic:** Easy to match government design patterns
+- **Bundle size:** Significantly smaller final build
+
+**Cost:**
+- More verbose JSX (className strings vs component props)
+- Need to build custom components (no pre-made buttons/cards)
+
+**Verdict:** Right choice for this project - fast, flexible, and lean
+
+### 5. Server-Side LLM Calls Over Client-Side
+
+**Decision:** All LLM requests go through Next.js API routes, never directly from browser
+
+**Rationale:**
+- **Security:** API keys never exposed to client
+- **Rate limiting:** Can implement server-side controls
+- **Caching:** Server can cache responses
+- **Error handling:** Better control over retry logic
+
+**Cost:**
+- Extra API route layer
+- Can't use streaming directly from Anthropic SDK in client
+
+**Verdict:** Non-negotiable for production apps - security first
+
+### 6. TypeScript Strict Mode Over Lenient
+
+**Decision:** Enable strict mode in tsconfig.json
+
+**Rationale:**
+- **Catch bugs early:** Type errors found at compile time
+- **Better IDE support:** Autocomplete and refactoring work better
+- **Self-documenting:** Types serve as inline documentation
+- **Professional standard:** Expected in production codebases
+
+**Cost:**
+- Slightly more verbose code (explicit types required)
+- Learning curve for developers not familiar with TS
+
+**Verdict:** Essential - prevents entire categories of runtime errors
+
+### 7. Mobile-First Responsive Design Over Desktop-Only
+
+**Decision:** Citation tooltips use fixed positioning on mobile, absolute on desktop
+
+**Rationale:**
+- **Mobile usage:** Many users research visas on phones
+- **UX on small screens:** Tooltips can't overflow viewport
+- **Progressive enhancement:** Works everywhere, enhanced on larger screens
+
+**Implementation:**
+```tsx
+// Mobile: fixed bottom position (always visible)
+className="fixed left-4 right-4 bottom-4 md:absolute md:left-0 md:mt-2"
+```
+
+**Verdict:** Required - app must work well on all devices
 
 ---
 

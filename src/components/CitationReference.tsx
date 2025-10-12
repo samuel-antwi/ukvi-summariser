@@ -20,8 +20,7 @@ export function CitationReference({ citation, basePath, sectionMappings }: Citat
     <span className="relative inline-block">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="hover:underline text-sm font-medium mx-0.5 cursor-pointer"
-        style={{ color: '#1D71B8' }}
+        className="hover:underline text-sm font-medium mx-0.5 cursor-pointer text-[#1D71B8]"
         aria-label={`View citation ${citation.id}`}
       >
         [{citation.id}]
@@ -49,7 +48,7 @@ export function CitationReference({ citation, basePath, sectionMappings }: Citat
                 ✕
               </button>
             </div>
-            <blockquote className="text-sm text-foreground/90 italic border-l-2 pl-3 mb-3" style={{ borderColor: '#1D71B8' }}>
+            <blockquote className="text-sm text-foreground/90 italic border-l-2 border-l-[#1D71B8] pl-3 mb-3">
               &ldquo;{citation.quote}&rdquo;
             </blockquote>
 
@@ -60,8 +59,7 @@ export function CitationReference({ citation, basePath, sectionMappings }: Citat
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={() => setIsExpanded(false)}
-                className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium rounded transition-colors hover:bg-foreground/5"
-                style={{ color: '#1D71B8' }}
+                className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium rounded transition-colors hover:bg-foreground/5 text-[#1D71B8]"
               >
                 <span>View on official GOV.UK page</span>
                 <svg

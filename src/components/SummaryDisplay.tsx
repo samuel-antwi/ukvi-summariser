@@ -24,8 +24,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
             href={summary.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:underline"
-            style={{ color: '#1D71B8' }}
+            className="hover:underline text-[#1D71B8]"
           >
             View official guidance →
           </a>
@@ -39,7 +38,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
             >
               ✕
             </button>
-            <span className="font-medium">📎 Grounded summary:</span> All claims in this summary are cited with quotes from the source page. Click any <span style={{ color: '#1D71B8' }}>[number]</span> to view the source quote.
+            <span className="font-medium">📎 Grounded summary:</span> All claims in this summary are cited with quotes from the source page. Click any <span className="text-[#1D71B8]">[number]</span> to view the source quote.
           </div>
         )}
       </div>
