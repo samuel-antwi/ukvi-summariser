@@ -50,6 +50,8 @@ export async function summariseVisaGuidance(
 
 ${GROUNDING_INSTRUCTIONS}
 
+IMPORTANT: For Application Steps, look for information about how to apply, application process, or steps to follow - even if scattered across different sections. If you find ANY application information (e.g., "apply online", "book an appointment", "pay the fee"), extract it. Only say "Not specified in the guidance" if there is truly NO application information anywhere in the text.
+
 Visa Type: ${visaName}
 
 Original GOV.UK Content:
@@ -76,7 +78,7 @@ Write a natural summary with numbered citations [1], [2], [3] after each fact.
 [Amounts with citations]
 
 ## Application Steps
-[Process with citations]
+[Process with citations - look throughout the entire guidance for application process information]
 
 ${buildCitationFormatInstructions('markdown', sectionTitles)}
 
@@ -91,6 +93,7 @@ Use British English. Extract ONLY from provided text.`;
 IMPORTANT INSTRUCTIONS:
 - Extract information ONLY from the provided text - do not add information from your training data
 - If a section's information is not clearly stated in the text, say "Not specified in the guidance"
+- For Application Steps: Look for information about how to apply, application process, what to do, or steps to follow - even if not in a dedicated section. If you find ANY information about the application process (e.g., "apply online", "book an appointment", "pay the fee"), extract it. Only say "Not specified" if there is truly NO application information anywhere in the text.
 - Be concise but accurate - focus on the most important points
 - Use bullet points for clarity where appropriate
 - Use British English spelling throughout (e.g., "summarise", "organised", "behaviour")
