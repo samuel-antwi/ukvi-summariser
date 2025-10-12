@@ -69,6 +69,27 @@ export function extractTextContent(content: GovUkContentResponse): string {
 }
 
 /**
+ * Extracts section titles from GOV.UK API response
+ * These titles are used to guide the LLM on valid section names for citations
+ * @param content - The GOV.UK content response
+ * @returns Array of section titles from the page
+ */
+export function extractSectionTitles(content: GovUkContentResponse): string[] {
+  const titles: string[] = ['Overview']; // Overview is always the base page
+
+  // Extract titles from multi-part guides
+  if (content.details?.parts && content.details.parts.length > 0) {
+    content.details.parts.forEach((part) => {
+      if (part.title && part.title !== 'Overview') {
+        titles.push(part.title);
+      }
+    });
+  }
+
+  return titles;
+}
+
+/**
  * Gets the full GOV.UK URL for a visa route
  * @param path - The visa route path
  * @returns The full URL to the GOV.UK page

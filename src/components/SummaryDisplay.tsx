@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { VisaSummary, Citation } from '@/types';
 import { CitationReference } from './CitationReference';
 
@@ -8,6 +9,8 @@ interface SummaryDisplayProps {
 }
 
 export function SummaryDisplay({ summary }: SummaryDisplayProps) {
+  const [showCitationHelper, setShowCitationHelper] = useState(true);
+
   return (
     <div className="w-full space-y-6">
       {/* Header */}
@@ -26,8 +29,15 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
             View official guidance →
           </a>
         </div>
-        {summary.citations && summary.citations.length > 0 && (
-          <div className="text-xs text-foreground/60 bg-blue-50 dark:bg-blue-950/20 px-3 py-2 rounded">
+        {summary.citations && summary.citations.length > 0 && showCitationHelper && (
+          <div className="relative text-xs text-foreground/70 bg-foreground/5 border border-foreground/10 px-3 py-2 rounded">
+            <button
+              onClick={() => setShowCitationHelper(false)}
+              className="absolute top-1.5 right-1.5 text-foreground/40 hover:text-foreground/70 transition-colors"
+              aria-label="Dismiss"
+            >
+              ✕
+            </button>
             <span className="font-medium">📎 Grounded summary:</span> All claims in this summary are cited with quotes from the source page. Click any <span className="text-blue-600 dark:text-blue-400">[number]</span> to view the source quote.
           </div>
         )}

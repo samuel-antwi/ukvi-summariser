@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { VisaSelector } from '@/components/VisaSelector';
 import { SummaryDisplay } from '@/components/SummaryDisplay';
 import { EligibilityChecker } from '@/components/EligibilityChecker';
-import { LoadingState } from '@/components/LoadingState';
+import { StreamingSummary } from '@/components/StreamingSummary';
 import { ErrorDisplay } from '@/components/ErrorDisplay';
 import { VisaRouteId, VisaSummary } from '@/types';
 import { VISA_ROUTES } from '@/lib/constants';
@@ -14,37 +14,38 @@ type ViewMode = 'summary' | 'eligibility';
 export default function Home() {
   const [selectedVisa, setSelectedVisa] = useState<VisaRouteId | null>(null);
   const [summary, setSummary] = useState<VisaSummary | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<ViewMode>('summary');
+  const [streamingVisaId, setStreamingVisaId] = useState<string | null>(null);
 
   const handleSummarise = async () => {
     if (!selectedVisa) return;
 
-    setLoading(true);
+    // Start streaming
+    setIsStreaming(true);
     setError(null);
     setSummary(null);
+    setStreamingVisaId(selectedVisa);
+  };
 
-    try {
-      const response = await fetch('/api/summarise', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ visaRouteId: selectedVisa }),
-      });
+  const handleStreamComplete = (
+    success: boolean,
+    summaryData?: VisaSummary,
+    errorMessage?: string
+  ) => {
+    setIsStreaming(false);
+    setStreamingVisaId(null);
 
-      const data = await response.json();
+    if (!success) {
+      setError(errorMessage || 'Failed to generate summary');
+      return;
+    }
 
-      if (data.success && data.data) {
-        setSummary(data.data);
-      } else {
-        setError(data.error || 'Failed to generate summary');
-      }
-    } catch {
-      setError('An unexpected error occurred. Please try again.');
-    } finally {
-      setLoading(false);
+    if (summaryData) {
+      setSummary(summaryData);
+    } else {
+      setError('No summary data received');
     }
   };
 
@@ -73,7 +74,7 @@ export default function Home() {
           <VisaSelector
             value={selectedVisa}
             onChange={setSelectedVisa}
-            disabled={loading}
+            disabled={isStreaming}
           />
         </div>
 
@@ -108,15 +109,21 @@ export default function Home() {
           <div className="space-y-6">
             <button
               onClick={handleSummarise}
-              disabled={!selectedVisa || loading}
+              disabled={!selectedVisa || isStreaming}
               className="w-full px-6 py-3 bg-foreground text-background font-medium rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {loading ? 'Generating Summary...' : 'Summarise Guidance'}
+              {isStreaming ? 'Generating Summary...' : 'Summarise Guidance'}
             </button>
 
-            {loading && <LoadingState />}
+            {isStreaming && streamingVisaId && selectedVisaRoute && (
+              <StreamingSummary
+                visaRouteId={streamingVisaId}
+                basePath={selectedVisaRoute.path}
+                onComplete={handleStreamComplete}
+              />
+            )}
             {error && <ErrorDisplay message={error} onRetry={handleRetry} />}
-            {summary && !loading && <SummaryDisplay summary={summary} />}
+            {summary && !isStreaming && <SummaryDisplay summary={summary} />}
           </div>
         )}
 

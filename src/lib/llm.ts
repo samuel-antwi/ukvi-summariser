@@ -6,28 +6,87 @@ import {
   EligibilityAnswer,
 } from "@/types";
 import { SUMMARY_DISCLAIMER } from "./constants";
+import {
+  CITATION_RULES,
+  GROUNDING_INSTRUCTIONS,
+  buildCitationFormatInstructions,
+} from "./promptTemplates";
 
 const anthropic = new Anthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
 /**
- * Generates a structured summary of visa guidance using Claude
+ * Generates a structured summary of visa guidance using Claude with streaming
  * @param content - The raw text content from GOV.UK
  * @param visaName - The name of the visa route
  * @param sourceUrl - The URL to the original GOV.UK page
  * @param lastUpdated - The last updated date from GOV.UK
  * @param basePath - The GOV.UK base path (e.g., '/standard-visitor')
+ * @param onStream - Optional callback to receive streamed text chunks
+ * @param sectionTitles - Optional array of section titles from GOV.UK API (automatically extracted)
  * @returns A structured visa summary
+ *
+ * NOTE: This function uses a dual-prompt strategy for streaming vs non-streaming modes.
+ * Both prompts share common components from promptTemplates.ts to maintain consistency
+ * and ensure citations work correctly in both modes. See README.md Challenge 4 for details.
+ *
+ * Section titles are dynamically extracted from the GOV.UK API response, ensuring the LLM
+ * uses current, accurate section names even if GOV.UK updates their page structure.
  */
 export async function summariseVisaGuidance(
   content: string,
   visaName: string,
   sourceUrl: string,
   lastUpdated: string | null,
-  basePath: string
+  basePath: string,
+  onStream?: (chunk: string) => void,
+  sectionTitles?: string[]
 ): Promise<VisaSummary> {
-  const prompt = `You are an expert at analysing UK visa guidance from GOV.UK. Your task is to create a clear, structured summary of the following visa guidance with full source citations.
+
+  // Streaming prompt: outputs readable markdown for real-time display
+  // Uses shared constants to ensure citation format consistency
+  const streamingPrompt = `You are an expert at analysing UK visa guidance from GOV.UK. Create a clear, readable summary with inline citations.
+
+${GROUNDING_INSTRUCTIONS}
+
+Visa Type: ${visaName}
+
+Original GOV.UK Content:
+${content}
+
+Write a natural summary with numbered citations [1], [2], [3] after each fact.
+
+## Eligibility
+[2-3 key requirements with citations]
+
+## Permitted Activities
+[What you can do, with citations]
+
+## Restrictions
+[What you cannot do, with citations]
+
+## Length of Stay
+[Duration with citation]
+
+## Required Documents
+[Key documents with citations]
+
+## Fees
+[Amounts with citations]
+
+## Application Steps
+[Process with citations]
+
+${buildCitationFormatInstructions('markdown', sectionTitles)}
+
+${CITATION_RULES}
+
+Use British English. Extract ONLY from provided text.`;
+
+  // Structured prompt: outputs JSON for non-streaming mode
+  // Uses shared constants to ensure citation format consistency with streaming mode
+  const structuredPrompt = `You are an expert at analysing UK visa guidance from GOV.UK. Your task is to create a clear, structured summary of the following visa guidance with full source citations.
 
 IMPORTANT INSTRUCTIONS:
 - Extract information ONLY from the provided text - do not add information from your training data
@@ -36,28 +95,9 @@ IMPORTANT INSTRUCTIONS:
 - Use bullet points for clarity where appropriate
 - Use British English spelling throughout (e.g., "summarise", "organised", "behaviour")
 
-**CRITICAL GROUNDING REQUIREMENT - READ CAREFULLY**:
-You MUST ONLY use information that appears in the "Original GOV.UK Content" section below.
+${GROUNDING_INSTRUCTIONS}
 
-DO NOT use:
-- Information from your training data
-- Information from other GOV.UK pages you know about
-- General knowledge about UK visas
-- Any facts not explicitly stated in the provided text
-
-Citation rules - CRITICAL:
-- After EACH factual claim, add a UNIQUE citation number [1], [2], [3], etc.
-- NEVER reuse a citation number - each number can only appear ONCE in the entire summary
-- If you write [5] in the text, there MUST be a citation with id: "5" in the citations array
-- If information is NOT in the provided text, write "Not specified in the guidance" instead of making a claim
-- Citation quotes MUST be:
-  * EXACT word-for-word copies from the "Original GOV.UK Content" section below
-  * Short and specific (1 sentence or key phrase, max ~80 words)
-  * Clean text only (no "..." ellipsis, no [brackets], no formatting)
-  * Continuous text from the source (don't skip words or join separate sentences)
-- Create as many citations as needed - if you have 15 claims, create 15 citations
-- The number of citations in the array MUST match the highest citation number used in the text
-- If you cannot find exact text to cite, do not make the claim
+${CITATION_RULES}
 
 EXAMPLE OF CORRECT CITATIONS:
 Text: "The fee is £100 [1]. Healthcare surcharge is £624 per year [2]. You need a passport [3]."
@@ -96,26 +136,7 @@ IMPORTANT: Keep each section concise (2-4 key points maximum). Only cite factual
 
 7. APPLICATION_STEPS: List 4-5 high-level steps. Cite steps that have specific requirements or timelines.
 
-Format your response as STRICTLY VALID JSON with this exact structure:
-{
-  "eligibility": "string (with [1], [2] citations)",
-  "permittedActivities": "string (with citations)",
-  "restrictions": "string (with citations)",
-  "lengthOfStay": "string (with citations)",
-  "requiredDocuments": "string (with citations)",
-  "fees": "string (with citations)",
-  "applicationSteps": "string (with citations)",
-  "citations": [
-    {
-      "id": "1",
-      "quote": "exact quote from source text",
-      "section": "eligibility",
-      "sectionTitle": "Overview or Apply for a Standard Visitor visa or Visit on business etc"
-    }
-  ]
-}
-
-IMPORTANT: For each citation, the "sectionTitle" must be the exact heading/part title from the source where you found the quote (e.g., "Overview", "Apply for a Standard Visitor visa", "Visit on business"). This helps users find the quote on the correct GOV.UK sub-page.
+${buildCitationFormatInstructions('json', sectionTitles)}
 
 CRITICAL JSON FORMATTING RULES:
 - Escape all double quotes inside strings with backslash: \\"
@@ -126,19 +147,51 @@ CRITICAL JSON FORMATTING RULES:
 - End each array element with a comma except the last one`;
 
   try {
-    const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
-      max_tokens: 8000, // Significantly increased for comprehensive citations
-      messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    });
+    let responseText = "";
 
-    const responseText =
-      message.content[0].type === "text" ? message.content[0].text : "";
+    if (onStream) {
+      // Streaming mode - use simple readable prompt
+      const stream = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20250219",
+        max_tokens: 4000,
+        messages: [
+          {
+            role: "user",
+            content: streamingPrompt,
+          },
+        ],
+        stream: true,
+      });
+
+      for await (const event of stream) {
+        if (
+          event.type === "content_block_delta" &&
+          event.delta.type === "text_delta"
+        ) {
+          const chunk = event.delta.text;
+          responseText += chunk;
+          onStream(chunk);
+        }
+      }
+
+      // Parse the streamed markdown response to extract structured data
+      return parseMarkdownSummary(responseText, visaName, sourceUrl, lastUpdated, basePath);
+    } else {
+      // Non-streaming mode (backwards compatible)
+      const message = await anthropic.messages.create({
+        model: "claude-3-5-sonnet-20250219",
+        max_tokens: 8000,
+        messages: [
+          {
+            role: "user",
+            content: structuredPrompt,
+          },
+        ],
+      });
+
+      responseText =
+        message.content[0].type === "text" ? message.content[0].text : "";
+    }
 
     // Extract JSON from response (Claude might wrap it in markdown code blocks)
     let jsonText = responseText;
@@ -279,7 +332,7 @@ CRITICAL JSON FORMATTING RULES:
 
   try {
     const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20241022",
+      model: "claude-3-5-sonnet-20250219",
       max_tokens: 4000,
       messages: [
         {
@@ -345,4 +398,67 @@ CRITICAL JSON FORMATTING RULES:
     }
     throw new Error("LLM eligibility assessment failed: Unknown error");
   }
+}
+
+/**
+ * Parse markdown summary into structured VisaSummary format
+ */
+function parseMarkdownSummary(
+  markdown: string,
+  visaName: string,
+  sourceUrl: string,
+  lastUpdated: string | null,
+  basePath: string
+): VisaSummary {
+  const extractSection = (heading: string): string => {
+    const regex = new RegExp(`## ${heading}\\s*\\n([\\s\\S]*?)(?=\\n## |\\n---|$)`, 'i');
+    const match = markdown.match(regex);
+    return match ? match[1].trim() : 'Not specified in the guidance';
+  };
+
+  // Extract citations from the "Citations:" section
+  const citations: Array<{ id: string; quote: string; section: string; sectionTitle?: string }> = [];
+  const citationsMatch = markdown.match(/\*\*Citations:\*\*\s*\n([\s\S]*)/i);
+
+  if (citationsMatch) {
+    const citationLines = citationsMatch[1].split('\n');
+    citationLines.forEach(line => {
+      // Match: 1. "quote" | Section: section name
+      const match = line.match(/^(\d+)\.\s*"([^"]+)"\s*\|\s*Section:\s*(.+)/);
+      if (match) {
+        citations.push({
+          id: match[1],
+          quote: match[2],
+          section: 'general',
+          sectionTitle: match[3].trim(),
+        });
+      } else {
+        // Fallback to simple format without section
+        const simpleMatch = line.match(/^(\d+)\.\s*"([^"]+)"/);
+        if (simpleMatch) {
+          citations.push({
+            id: simpleMatch[1],
+            quote: simpleMatch[2],
+            section: 'general',
+          });
+        }
+      }
+    });
+  }
+
+  return {
+    title: visaName,
+    lastUpdated,
+    sourceUrl,
+    basePath,
+    eligibility: extractSection('Eligibility'),
+    permittedActivities: extractSection('Permitted Activities'),
+    restrictions: extractSection('Restrictions'),
+    lengthOfStay: extractSection('Length of Stay'),
+    requiredDocuments: extractSection('Required Documents'),
+    fees: extractSection('Fees'),
+    applicationSteps: extractSection('Application Steps'),
+    disclaimer: SUMMARY_DISCLAIMER,
+    citations,
+  };
 }
