@@ -152,7 +152,7 @@ CRITICAL JSON FORMATTING RULES:
     if (onStream) {
       // Streaming mode - use simple readable prompt
       const stream = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20250219",
+        model: "claude-3-5-sonnet-20241022",
         max_tokens: 4000,
         messages: [
           {
@@ -179,7 +179,7 @@ CRITICAL JSON FORMATTING RULES:
     } else {
       // Non-streaming mode (backwards compatible)
       const message = await anthropic.messages.create({
-        model: "claude-3-5-sonnet-20250219",
+        model: "claude-3-5-sonnet-20241022",
         max_tokens: 8000,
         messages: [
           {
@@ -332,7 +332,7 @@ CRITICAL JSON FORMATTING RULES:
 
   try {
     const message = await anthropic.messages.create({
-      model: "claude-3-5-sonnet-20250219",
+      model: "claude-3-5-sonnet-20241022",
       max_tokens: 4000,
       messages: [
         {
