@@ -17,6 +17,7 @@ export function StreamingSummary({
 }: StreamingSummaryProps) {
   const [streamedText, setStreamedText] = useState<string>('');
   const [parsedCitations, setParsedCitations] = useState<Map<string, Citation>>(new Map());
+  const [sectionMappings, setSectionMappings] = useState<Record<string, string>>({});
   const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
@@ -75,6 +76,10 @@ export function StreamingSummary({
                 });
               } else if (data.type === 'summary') {
                 receivedSummary = data.data;
+                // Extract section mappings from the summary
+                if (receivedSummary?.sectionMappings) {
+                  setSectionMappings(receivedSummary.sectionMappings);
+                }
               } else if (data.type === 'done') {
                 onComplete(true, receivedSummary);
               } else if (data.type === 'error') {
@@ -115,6 +120,7 @@ export function StreamingSummary({
                   key={j}
                   citation={citation}
                   basePath={basePath}
+                  sectionMappings={sectionMappings}
                 />
               );
             }
@@ -123,7 +129,8 @@ export function StreamingSummary({
             return (
               <sup
                 key={j}
-                className="text-blue-600 font-medium mx-0.5"
+                className="font-medium mx-0.5"
+                style={{ color: '#1D71B8' }}
               >
                 [{citationId}]
               </sup>

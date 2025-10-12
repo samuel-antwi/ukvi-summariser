@@ -3,6 +3,7 @@ import {
   fetchGovUkContent,
   extractTextContent,
   extractSectionTitles,
+  extractSectionMappings,
   getGovUkUrl,
 } from "@/lib/govuk";
 import { summariseVisaGuidance } from "@/lib/llm";
@@ -42,9 +43,10 @@ async function handleStandardRequest(request: NextRequest) {
     // Fetch content from GOV.UK
     const govUkContent = await fetchGovUkContent(visaRoute.path);
 
-    // Extract text content and section titles
+    // Extract text content, section titles, and section mappings
     const textContent = extractTextContent(govUkContent);
     const sectionTitles = extractSectionTitles(govUkContent);
+    const sectionMappings = extractSectionMappings(govUkContent);
 
     // Get metadata
     const sourceUrl = getGovUkUrl(visaRoute.path);
@@ -66,6 +68,9 @@ async function handleStandardRequest(request: NextRequest) {
       undefined, // No streaming callback
       sectionTitles // Dynamic section titles from GOV.UK API
     );
+
+    // Add section mappings to the summary for URL construction
+    summary.sectionMappings = sectionMappings;
 
     return NextResponse.json<SummariseResponse>({
       success: true,
@@ -120,6 +125,7 @@ async function handleStreamingRequest(request: NextRequest) {
         const govUkContent = await fetchGovUkContent(visaRoute.path);
         const textContent = extractTextContent(govUkContent);
         const sectionTitles = extractSectionTitles(govUkContent);
+        const sectionMappings = extractSectionMappings(govUkContent);
         const sourceUrl = getGovUkUrl(visaRoute.path);
         const lastUpdated = govUkContent.public_updated_at
           ? new Date(govUkContent.public_updated_at).toLocaleDateString(
@@ -156,6 +162,9 @@ async function handleStreamingRequest(request: NextRequest) {
           },
           sectionTitles // Dynamic section titles from GOV.UK API
         );
+
+        // Add section mappings to the summary for URL construction
+        summary.sectionMappings = sectionMappings;
 
         // Send the complete summary
         await writer.write(

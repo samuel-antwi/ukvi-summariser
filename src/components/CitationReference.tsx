@@ -7,19 +7,21 @@ import { buildSectionUrl } from '@/lib/sectionMapper';
 interface CitationReferenceProps {
   citation: Citation;
   basePath: string; // e.g., '/standard-visitor'
+  sectionMappings?: Record<string, string>; // Maps section titles to GOV.UK slugs
 }
 
-export function CitationReference({ citation, basePath }: CitationReferenceProps) {
+export function CitationReference({ citation, basePath, sectionMappings }: CitationReferenceProps) {
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Build section-specific URL (e.g., /standard-visitor/apply-standard-visitor-visa)
-  const verificationUrl = buildSectionUrl(basePath, citation.sectionTitle || null);
+  // Build section-specific URL using actual GOV.UK slugs
+  const verificationUrl = buildSectionUrl(basePath, citation.sectionTitle || null, sectionMappings);
 
   return (
     <span className="relative inline-block">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="text-blue-600 dark:text-blue-400 hover:underline text-sm font-medium mx-0.5 cursor-pointer"
+        className="hover:underline text-sm font-medium mx-0.5 cursor-pointer"
+        style={{ color: '#1D71B8' }}
         aria-label={`View citation ${citation.id}`}
       >
         [{citation.id}]
@@ -34,7 +36,7 @@ export function CitationReference({ citation, basePath }: CitationReferenceProps
           />
 
           {/* Citation quote tooltip */}
-          <div className="absolute z-50 mt-2 w-96 p-4 bg-background border border-foreground/20 rounded-lg shadow-xl left-0">
+          <div className="fixed md:absolute z-50 left-4 right-4 bottom-4 md:bottom-auto md:left-0 md:right-auto md:mt-2 md:w-96 max-w-md p-4 bg-background border border-foreground/20 rounded-lg shadow-xl">
             <div className="flex justify-between items-start mb-2">
               <span className="text-xs font-semibold text-foreground/70">
                 Source Citation [{citation.id}]
@@ -47,7 +49,7 @@ export function CitationReference({ citation, basePath }: CitationReferenceProps
                 ✕
               </button>
             </div>
-            <blockquote className="text-sm text-foreground/90 italic border-l-2 border-blue-500 pl-3 mb-3">
+            <blockquote className="text-sm text-foreground/90 italic border-l-2 pl-3 mb-3" style={{ borderColor: '#1D71B8' }}>
               &ldquo;{citation.quote}&rdquo;
             </blockquote>
 
@@ -57,7 +59,9 @@ export function CitationReference({ citation, basePath }: CitationReferenceProps
                 href={verificationUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/30 rounded transition-colors"
+                onClick={() => setIsExpanded(false)}
+                className="flex items-center justify-between gap-2 px-3 py-2 text-xs font-medium rounded transition-colors hover:bg-foreground/5"
+                style={{ color: '#1D71B8' }}
               >
                 <span>View on official GOV.UK page</span>
                 <svg

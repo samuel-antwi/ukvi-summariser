@@ -85,9 +85,10 @@ export default function Home() {
               onClick={() => setViewMode('summary')}
               className={`px-4 py-2 font-medium transition-colors ${
                 viewMode === 'summary'
-                  ? 'border-b-2 border-foreground text-foreground'
+                  ? 'border-b-2 text-foreground'
                   : 'text-foreground/60 hover:text-foreground'
               }`}
+              style={viewMode === 'summary' ? { borderColor: '#1D71B8' } : {}}
             >
               Get Summary
             </button>
@@ -95,9 +96,10 @@ export default function Home() {
               onClick={() => setViewMode('eligibility')}
               className={`px-4 py-2 font-medium transition-colors ${
                 viewMode === 'eligibility'
-                  ? 'border-b-2 border-foreground text-foreground'
+                  ? 'border-b-2 text-foreground'
                   : 'text-foreground/60 hover:text-foreground'
               }`}
+              style={viewMode === 'eligibility' ? { borderColor: '#1D71B8' } : {}}
             >
               Check Eligibility
             </button>
@@ -110,7 +112,8 @@ export default function Home() {
             <button
               onClick={handleSummarise}
               disabled={!selectedVisa || isStreaming}
-              className="w-full px-6 py-3 bg-foreground text-background font-medium rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="w-full px-6 py-3 text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              style={{ backgroundColor: '#1D71B8' }}
             >
               {isStreaming ? 'Generating Summary...' : 'Summarise Guidance'}
             </button>

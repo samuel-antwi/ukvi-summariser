@@ -2,7 +2,7 @@
 
 A web application that transforms UK Home Office visa guidance into structured summaries with source citations and interactive eligibility checking.
 
-**Live Demo:** [Deploy link here]
+**Live Demo:** https://ukvi-summariser-omega.vercel.app/
 
 ---
 

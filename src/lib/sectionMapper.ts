@@ -21,12 +21,17 @@ export function sectionTitleToSlug(sectionTitle: string): string {
  * Builds the full GOV.UK URL for a specific section
  * @param basePath - The base visa route path (e.g., '/standard-visitor')
  * @param sectionTitle - The section title (e.g., 'Apply for a Standard Visitor visa')
+ * @param sectionMappings - Optional mapping of section titles to actual GOV.UK slugs
  * @returns Full GOV.UK URL to the specific section
  *
- * NOTE: Using automatic slug generation via sectionTitleToSlug().
- * Testing to verify this works correctly before adding hardcoded mappings.
+ * NOTE: Uses actual slugs from GOV.UK API when available via sectionMappings.
+ * Falls back to automatic slug generation if mappings not provided (for backward compatibility).
  */
-export function buildSectionUrl(basePath: string, sectionTitle: string | null): string {
+export function buildSectionUrl(
+  basePath: string,
+  sectionTitle: string | null,
+  sectionMappings?: Record<string, string>
+): string {
   const baseUrl = `https://www.gov.uk${basePath}`;
 
   if (!sectionTitle || sectionTitle.toLowerCase() === 'overview') {
@@ -34,6 +39,7 @@ export function buildSectionUrl(basePath: string, sectionTitle: string | null): 
     return baseUrl;
   }
 
-  const slug = sectionTitleToSlug(sectionTitle);
+  // Use actual slug from GOV.UK API if available
+  const slug = sectionMappings?.[sectionTitle] || sectionTitleToSlug(sectionTitle);
   return `${baseUrl}/${slug}`;
 }

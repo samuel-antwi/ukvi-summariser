@@ -17,6 +17,7 @@ export interface GovUkContentResponse {
     parts?: Array<{
       title: string;
       body: string;
+      slug: string;
     }>;
   };
   public_updated_at?: string;
@@ -44,6 +45,7 @@ export interface VisaSummary {
   applicationSteps: string;
   disclaimer: string;
   citations?: Citation[];
+  sectionMappings?: Record<string, string>; // Maps section titles to GOV.UK slugs
 }
 
 export interface SummariseResponse {

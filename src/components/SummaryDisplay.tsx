@@ -24,7 +24,8 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
             href={summary.sourceUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 dark:text-blue-400 hover:underline"
+            className="hover:underline"
+            style={{ color: '#1D71B8' }}
           >
             View official guidance →
           </a>
@@ -38,7 +39,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
             >
               ✕
             </button>
-            <span className="font-medium">📎 Grounded summary:</span> All claims in this summary are cited with quotes from the source page. Click any <span className="text-blue-600 dark:text-blue-400">[number]</span> to view the source quote.
+            <span className="font-medium">📎 Grounded summary:</span> All claims in this summary are cited with quotes from the source page. Click any <span style={{ color: '#1D71B8' }}>[number]</span> to view the source quote.
           </div>
         )}
       </div>
@@ -50,6 +51,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.eligibility}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
 
         <SummarySection
@@ -57,6 +59,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.permittedActivities}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
 
         <SummarySection
@@ -64,6 +67,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.restrictions}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
 
         <SummarySection
@@ -71,6 +75,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.lengthOfStay}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
 
         <SummarySection
@@ -78,6 +83,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.requiredDocuments}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
 
         <SummarySection
@@ -85,6 +91,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.fees}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
 
         <SummarySection
@@ -92,6 +99,7 @@ export function SummaryDisplay({ summary }: SummaryDisplayProps) {
           content={summary.applicationSteps}
           citations={summary.citations}
           basePath={summary.basePath}
+          sectionMappings={summary.sectionMappings}
         />
       </div>
 
@@ -108,11 +116,13 @@ function SummarySection({
   content,
   citations,
   basePath,
+  sectionMappings,
 }: {
   title: string;
   content: string;
   citations?: Citation[];
   basePath: string;
+  sectionMappings?: Record<string, string>;
 }) {
   // Parse content and replace citation markers with interactive components
   const renderContentWithCitations = () => {
@@ -142,6 +152,7 @@ function SummarySection({
             key={`citation-${citationId}-${match.index}`}
             citation={citation}
             basePath={basePath}
+            sectionMappings={sectionMappings}
           />
         );
       } else {

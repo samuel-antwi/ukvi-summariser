@@ -180,7 +180,8 @@ export function EligibilityChecker({
         <button
           type="submit"
           disabled={!allQuestionsAnswered || loading}
-          className="w-full px-6 py-3 bg-foreground text-background font-medium rounded-lg hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="w-full px-6 py-3 text-white font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          style={{ backgroundColor: '#1D71B8' }}
         >
           {loading ? "Assessing Eligibility..." : "Check Eligibility"}
         </button>
@@ -302,7 +303,8 @@ function EligibilityResult({
           href={assessment.sourceUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className=" hover:underline text-blue-600 text-sm font-bold"
+          className="hover:underline text-sm font-bold"
+          style={{ color: '#1D71B8' }}
         >
           View official guidance →
         </a>

@@ -90,6 +90,35 @@ export function extractSectionTitles(content: GovUkContentResponse): string[] {
 }
 
 /**
+ * Extracts section title to slug mappings from GOV.UK API response
+ * GOV.UK provides actual slugs that don't always match simple title transformations
+ * @param content - The GOV.UK content response
+ * @returns Map of section titles to their actual GOV.UK slugs
+ * @example
+ * {
+ *   "Overview": "overview",
+ *   "Apply for a Standard Visitor visa": "apply-standard-visitor-visa",
+ *   "Visit on business": "visit-on-business"
+ * }
+ */
+export function extractSectionMappings(content: GovUkContentResponse): Record<string, string> {
+  const mappings: Record<string, string> = {
+    'Overview': 'overview' // Overview is always the base page
+  };
+
+  // Extract title->slug mappings from multi-part guides
+  if (content.details?.parts && content.details.parts.length > 0) {
+    content.details.parts.forEach((part) => {
+      if (part.title && part.slug) {
+        mappings[part.title] = part.slug;
+      }
+    });
+  }
+
+  return mappings;
+}
+
+/**
  * Gets the full GOV.UK URL for a visa route
  * @param path - The visa route path
  * @returns The full URL to the GOV.UK page
